@@ -1,4 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 
 void main() {
   runApp(const MyApp());
@@ -74,6 +78,10 @@ class TextCustomPainter extends CustomPainter {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   double pos = 0;
+  OverlayEntry? overlayEntry;
+  double? px;
+  GlobalKey lkey = GlobalKey();
+  GlobalKey tkey = GlobalKey();
 
   void _incrementCounter() {
     setState(() {
@@ -87,6 +95,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void initState() {
+    overlayEntry?.remove();
+    overlayEntry = OverlayEntry(
+        builder: (builder) => Container(
+              width: 70,
+            ));
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      setState(() {
+        RenderObject? renderObject = lkey.currentContext!.findRenderObject();
+        if (renderObject != null) {
+          px = (renderObject as RenderBox)
+              .localToGlobal(
+                Offset.zero,
+              )
+              .dy;
+        }
+      });
+    });
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -94,30 +125,105 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        child: Stack(clipBehavior: Clip.none, children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: TextField(
-                  keyboardType: TextInputType.multiline,
-                  maxLines: 8,
-                  decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      border: OutlineInputBorder(),
-                      hintText: "Enter your text here"),
-                ),
+        child: LayoutBuilder(builder: (context, constraints) {
+          LayoutBuilder b = LayoutBuilder(builder: (context, constraints) {
+            TextPainter textPainter = TextPainter(
+              text: const TextSpan(
+                  text: "S -> Aoepdcmkmpomonjo",
+                  style: TextStyle(fontFamily: "mono")),
+              textDirection: TextDirection.ltr,
+            );
+            textPainter.layout(
+                maxWidth: constraints.maxWidth, minWidth: constraints.minWidth);
+
+            return IntrinsicWidth(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        pos = textPainter
+                            .getOffsetForCaret(TextPosition(offset: _counter),
+                                const Rect.fromLTWH(0, 0, 5, 5))
+                            .dx;
+                        pos += (textPainter
+                                        .getOffsetForCaret(
+                                            TextPosition(offset: _counter + 1),
+                                            const Rect.fromLTWH(0, 0, 5, 5))
+                                        .dx -
+                                    pos) /
+                                2.0 -
+                            5;
+                      });
+                      debugPrint(textPainter
+                          .getOffsetForCaret(TextPosition(offset: _counter),
+                              const Rect.fromLTWH(0, 0, 5, 5))
+                          .dx
+                          .toString());
+                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: CustomPaint(
+                            size: Size(textPainter.width, textPainter.height),
+                            painter: TextCustomPainter(textPainter),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(
+                    height: 3,
+                    thickness: 1,
+                    color: Color.fromRGBO(94, 94, 94, 1),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        pos = textPainter
+                            .getOffsetForCaret(TextPosition(offset: _counter),
+                                const Rect.fromLTWH(0, 0, 5, 5))
+                            .dx;
+                        pos += (textPainter
+                                        .getOffsetForCaret(
+                                            TextPosition(offset: _counter + 1),
+                                            const Rect.fromLTWH(0, 0, 5, 5))
+                                        .dx -
+                                    pos) /
+                                2.0 -
+                            5;
+                      });
+                      debugPrint(textPainter
+                          .getOffsetForCaret(TextPosition(offset: _counter),
+                              const Rect.fromLTWH(0, 0, 5, 5))
+                          .dx
+                          .toString());
+                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: CustomPaint(
+                            size: Size(textPainter.width, textPainter.height),
+                            painter: TextCustomPainter(
+                              textPainter,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '$_counter',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ],
-          ),
-          DecoratedBox(
+            );
+          });
+
+          Padding padding = Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: b,
+          );
+          DecoratedBox lista = DecoratedBox(
             decoration: const BoxDecoration(
                 color: Color.fromRGBO(255, 255, 255, 1),
                 borderRadius: BorderRadius.all(Radius.circular(5)),
@@ -128,130 +234,101 @@ class _MyHomePageState extends State<MyHomePage> {
                       offset: Offset(0.1, 0.1),
                       color: Color.fromRGBO(0, 0, 0, 0.5))
                 ]),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: LayoutBuilder(builder: (context, constraints) {
-                TextPainter textPainter = TextPainter(
-                  text: const TextSpan(
-                      text: "S -> Aoepdcmkmpomonjo",
-                      style: TextStyle(fontFamily: "mono")),
-                  textDirection: TextDirection.ltr,
-                );
-                textPainter.layout(
-                    maxWidth: constraints.maxWidth,
-                    minWidth: constraints.minWidth);
-                Container container = Container(
-                  constraints: const BoxConstraints.expand(height: 70),
-                );
+            child: padding,
+          );
 
-                return IntrinsicWidth(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            pos = textPainter
-                                .getOffsetForCaret(
-                                    TextPosition(offset: _counter),
-                                    const Rect.fromLTWH(0, 0, 5, 5))
-                                .dx;
-                            pos += (textPainter
-                                            .getOffsetForCaret(
-                                                TextPosition(
-                                                    offset: _counter + 1),
-                                                const Rect.fromLTWH(0, 0, 5, 5))
-                                            .dx -
-                                        pos) /
-                                    2.0 -
-                                5;
-                          });
-                          debugPrint(textPainter
-                              .getOffsetForCaret(TextPosition(offset: _counter),
-                                  const Rect.fromLTWH(0, 0, 5, 5))
-                              .dx
-                              .toString());
-                        },
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CustomPaint(
-                                size:
-                                    Size(textPainter.width, textPainter.height),
-                                painter: TextCustomPainter(textPainter),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(
-                        height: 3,
-                        thickness: 1,
-                        color: Color.fromRGBO(94, 94, 94, 1),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            pos = textPainter
-                                .getOffsetForCaret(
-                                    TextPosition(offset: _counter),
-                                    const Rect.fromLTWH(0, 0, 5, 5))
-                                .dx;
-                            pos += (textPainter
-                                            .getOffsetForCaret(
-                                                TextPosition(
-                                                    offset: _counter + 1),
-                                                const Rect.fromLTWH(0, 0, 5, 5))
-                                            .dx -
-                                        pos) /
-                                    2.0 -
-                                5;
-                          });
-                          debugPrint(textPainter
-                              .getOffsetForCaret(TextPosition(offset: _counter),
-                                  const Rect.fromLTWH(0, 0, 5, 5))
-                              .dx
-                              .toString());
-                        },
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CustomPaint(
-                                size:
-                                    Size(textPainter.width, textPainter.height),
-                                painter: TextCustomPainter(textPainter),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        color: Colors.amber,
-                        width: container.constraints?.biggest.width,
-                        height: container.constraints?.biggest.height,
-                      )
-                    ],
+          return Stack(clipBehavior: Clip.none, key: tkey, children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: TextField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 8,
+                    decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        border: OutlineInputBorder(),
+                        hintText: "Enter your text here"),
                   ),
-                );
-              }),
+                ),
+                Text(
+                  '$_counter',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+              ],
             ),
-          ),
-          Positioned(
+            lista,
+            Positioned(
+              top: 70,
+              child: Container(
+                width: 70,
+                key: lkey,
+              ),
+            ),
+            Positioned(
               top: 0,
               left: pos,
               child: const Icon(
                 Icons.arrow_drop_up_rounded,
                 size: 25,
-              ))
-        ]),
+              ),
+            ),
+            Positioned(
+                left: px,
+                top: 80,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                      color: Color.fromRGBO(255, 255, 255, 1),
+                      borderRadius: BorderRadius.all(Radius.circular(5)),
+                      boxShadow: [
+                        BoxShadow(
+                            blurRadius: 5,
+                            spreadRadius: 0,
+                            offset: Offset(0.1, 0.1),
+                            color: Color.fromRGBO(0, 0, 0, 0.5))
+                      ]),
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          Stack(
+                            children: [
+                              Text(
+                                "A -> a",
+                                style: TextStyle(fontFamily: "mono"),
+                              ),
+                              SelectableText(
+                                "A -> a",
+                                style: TextStyle(
+                                    fontFamily: "mono",
+                                    color: Colors.transparent),
+                              )
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+            Container(
+              width: 20,
+              height: 30,
+              decoration: BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.all(Radius.circular(5))),
+            )
+          ]);
+        }),
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
